@@ -3,12 +3,7 @@ import axios from "axios";
 import { EditarUsuario } from "./components/EditarUsuario/Editar";
 import AddUsuario from "./components/CadastraUsuario/AddUsuario";
 import { Header } from "./components/Header/Header";
-import {
-  ContainerPrincipal,
-  ContainerBarra,
-  ButtonCadastro,
-  BoxCadastro,
-} from "./Appstyle";
+import { ContainerPrincipal, ContainerBarra, ButtonCadastro, BoxCadastro } from "./Appstyle";
 
 function App() {
   const [usuarios, setUsuarios] = useState([]);
@@ -21,27 +16,38 @@ function App() {
     getUsuarios();
   }, []);
 
-  const getUsuarios = () => {
-    axios
-      .get(
-        "https://us-central1-labenu-apis.cloudfunctions.net/labenusers/users",
-        {
-          headers: {
-            Authorization: "ana-sammi-barbosa",
-          },
-        }
-      )
-      .then((res) => {
-        setUsuarios(res.data);
-      })
-      .catch((error) => {
-        console.log(error.response);
+  const getUsuarios = async () => {
+    // o bloco try/catch trata possiveis erros de requisição, assim como os metodos .then( ) .catch()
+    try {
+      // axios.get(url,headers)
+      const response = await axios.get("https://us-central1-labenu-apis.cloudfunctions.net/labenusers/users", {
+        headers: {
+          Authorization: "ana-sammi-barbosa",
+        },
       });
+      setUsuarios(response.data);
+    } catch (error) {
+      console.log(error.response);
+    }
   };
 
-  const pesquisaUsuario = (pesquisa) => {
-   
+  const pesquisaUsuario = async (pesquisa) => {
+    try {
+      const response = await axios.get(`https://us-central1-labenu-apis.cloudfunctions.net/labenusers/users/search?name=${pesquisa.nome}&email=${pesquisa.email}`,{
+      headers: {
+        Authorization: "ana-sammi-barbosa",
+      },
+    })
+    setUsuarios(response.data);
+    setPageFlow(3)
+      
+    } catch (error) {
+      console.log(error.response)
+    }
   };
+  useEffect(()=>{
+    pesquisaUsuario(pesquisa)
+  },[pesquisa])
 
   const onChangeName = (e) => {
     setNome(e.target.value);
@@ -53,20 +59,19 @@ function App() {
 
   const enviarDados = () => {
     const novaPesquisa = {
-      nome,
-      email,
+      nome: nome,
+      email: email,
     };
     setPesquisa(novaPesquisa);
-   
-    setNome("")
-    setEmail("")
-    
+
+    setNome("");
+    setEmail("");
   };
 
   const onClickVoltar = () => {
     getUsuarios();
-    setPageFlow(1)
-  }
+    setPageFlow(1);
+  };
 
   return (
     <div>
@@ -81,43 +86,19 @@ function App() {
           <>
             <ContainerBarra>
               <div>
-                <input
-                  value={nome}
-                  onChange={onChangeName}
-                  placeholder="Nome"
-                />
-                <input
-                  value={email}
-                  onChange={onChangeEmail}
-                  placeholder="Email"
-                />
+                <input value={nome} onChange={onChangeName} placeholder="Nome" />
+                <input value={email} onChange={onChangeEmail} placeholder="Email" />
                 <button type="submit" onClick={enviarDados}>
                   Pesquisar
                 </button>
               </div>
-              {pageFlow === 3 ? (
-                <ButtonCadastro onClick={onClickVoltar}>Voltar</ButtonCadastro>
-              ) : (
-                <ButtonCadastro onClick={() => setPageFlow(2)}>
-                  Cadastrar
-                </ButtonCadastro>
-              )}
-              
+              {pageFlow === 3 ? <ButtonCadastro onClick={onClickVoltar}>Voltar</ButtonCadastro> : <ButtonCadastro onClick={() => setPageFlow(2)}>Cadastrar</ButtonCadastro>}
             </ContainerBarra>
             {usuarios.map((usuario) => {
-              return (
-                <EditarUsuario
-                  key={usuario.id}
-                  id={usuario.id}
-                  getUsuarios={getUsuarios}
-                  setPageFlow={setPageFlow}
-                  pageFlow={pageFlow}
-                />
-              );
+              return <EditarUsuario key={usuario.id} id={usuario.id} getUsuarios={getUsuarios} setPageFlow={setPageFlow} pageFlow={pageFlow} />;
             })}
           </>
         )}
-        
       </ContainerPrincipal>
     </div>
   );
